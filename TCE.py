@@ -239,9 +239,15 @@ class ClipEnhancer:
     
 if __name__=="__main__":
     start = perf_counter()
+    
+    if not os.path.exists(ClipEnhancer.AUDIO_FILE_LOCATION): os.mkdir(ClipEnhancer.AUDIO_FILE_LOCATION)
+    if not os.path.exists(ClipEnhancer.FRAME_FILE_LOCATION): os.mkdir(ClipEnhancer.FRAME_FILE_LOCATION)
+    if not os.path.exists(ClipEnhancer.VIDEO_FILE_LOCATION): os.mkdir(ClipEnhancer.VIDEO_FILE_LOCATION)
+    
     file = '/Users/lkolding/Local Documents/Coding & programming/Python/Totk Clip Enhancer/Videos/TotK 30-06-23 00-42.mkv'
     ce = ClipEnhancer(60, (1920, 1080), file)
-    ce._preserveFolders = ['Videos/']
+    ce._preserveFolders = ['Videos/'] # deleting this will delete old, unenhanced files/clips - kinda annoying when debugging
     ce.run()
+    
     stop = perf_counter()
     print("\n[*] Finished in %s\n" % start-stop)
