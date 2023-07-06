@@ -103,25 +103,25 @@ class ClipEnhancer:
     
         return max_loc
     
-    def _checkFrame(self, frame) -> tuple:
+    def _frameInMenu(self, frame) -> bool:
         '''tries to locate UI elements inside of frame passed in img arg'''
         # back button check
         max_loc = self._matchImage(frame, ClipEnhancer.BACKBUTTON_TEMPLATE_LOCATION, ROI=ROIs.ROI)
         
         if max_loc == ROIs.ROI.back_button_location1:
-            return (frame, True)
+            return True
         
         if max_loc == ROIs.ROI.back_button_location2:
-            return (frame, True)
+            return True
         
         # back button check when in abilities menu
         max_loc = self._matchImage(frame, templatepath = ClipEnhancer.BACKBUTTON_TEMPLATE_LOCATION, ROI=ROIs.AbilitiesROI)
            
         if max_loc == ROIs.AbilitiesROI.back_button_location:
-            return (frame, True)
+            return True
         
         # If no menu was detected
-        return (frame, False)
+        return False
     
     def extractFrames(self):
         cap = cv2.VideoCapture(ClipEnhancer.VIDEO_FILE_LOCATION + self.filename + ClipEnhancer.VIDEO_FILE_EXTENSION)
@@ -152,10 +152,10 @@ class ClipEnhancer:
                 
                 if ret == True:
                     # ENTIRE BOTTLENECK HALTING THE PROGRAM UPON EACH FRAME FOUND RIGHT HERE
-                    result = self._checkFrame(frame)
+                    frameIsInMenu = self._frameInMenu(frame)
                     
                     # If frame doesn't contain menu
-                    if not result[1]:
+                    if not frameIsInMenu:
                         cv2.imwrite('frames/%05d'%frame_counter + ClipEnhancer.FRAME_FILE_EXTENSION, result[0])
                         frame_counter += 1
                         bar()
@@ -166,7 +166,7 @@ class ClipEnhancer:
                         bar()
                     
                     # If frame does contain menu AND starts a sequence of "menuframes"
-                    if result[1] and not lastFrameWasInMenu:            
+                    if frameIsInMenu and not lastFrameWasInMenu:            
                         # Convert frame file name (frame number) as time (seconds) and store it
                         cut_start_time = counter / self._framerate
                         # Reset
@@ -174,12 +174,12 @@ class ClipEnhancer:
                         continue
                             
                     # If frame does contain menu and is just a part of a longer sequence, skip
-                    if result[1] and lastFrameWasInMenu:
+                    if frameIsInMenu and lastFrameWasInMenu:
                         lastFrameWasInMenu = True
                         continue
                             
                     # If frame DOESN'T contain menu and current frame ends a sequence
-                    if not result[1] and lastFrameWasInMenu:
+                    if not frameIsInMenu and lastFrameWasInMenu:
                         cut_end_time = counter / self._framerate
                         self._totalCuts.append((cut_start_time, cut_end_time))
                         cut_start_time, cut_end_time = (0,0)
@@ -188,7 +188,7 @@ class ClipEnhancer:
                         continue
                     
                     # If frame DOESN'T contain menu and last frame wasn't in menu: just keep going
-                    if not result[1] and not lastFrameWasInMenu:
+                    if not frameIsInMenu and not lastFrameWasInMenu:
                         lastFrameWasInMenu = False
                         continue
                     
