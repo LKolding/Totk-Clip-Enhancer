@@ -8,11 +8,11 @@ from numpy import ndarray
 import moviepy.editor as mp
 from alive_progress import alive_bar
 
-from helper_functions import dhash
 from VideoConverter import convert_to_mp4
 import ROIs
 
 DEBUG = False
+BLUR_THRESHOLD = 20
 
 class ClipEnhancer:
     VIDEO_FILE_LOCATION = 'Videos/'
@@ -75,6 +75,7 @@ class ClipEnhancer:
 
     def run(self):
         self._clearFolders(only=['Frames', 'Audio'])
+        print('[*] Extracting Audio...')
         self.extractAudio()
         self.extractFrames()
         self.cutAudio()
@@ -103,8 +104,8 @@ class ClipEnhancer:
             ]
         subprocess.call(command, stdout=subprocess.DEVNULL)
     
-    def _print_text_on_frame(self, frame, text: str, location=(10,10)):
-        cv2.putText(frame, text, location, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1)
+    def _print_text_on_frame(self, frame, text: str, location=(10,10), color=(0, 0, 255)):
+        cv2.putText(frame, text, location, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
     def _print_rect_on_frame(self, frame, max_loc, ROI, color=(0, 255, 0)):
         '''Prints two rectangles on frame: one around the ROI and one around the template'''
@@ -160,37 +161,47 @@ class ClipEnhancer:
         # Checks both both drop button is present and not
         max_loc = self._matchImage(frame, ClipEnhancer.BACKBUTTON_TEMPLATE_LOCATION, ROI=ROIs.ROI)
         
-        if max_loc == ROIs.ROI.back_button_location1:
-            return True
+        if DEBUG:
+            color = (0,0, 255)
+            self._print_rect_on_frame(frame, max_loc, ROIs.ROI, color)
+            self._print_text_on_frame(frame, f'Bck_btn x, y: {round(max_loc[0], 5):7} -{round(max_loc[1], 5):7}', (10, 100), color)
         
-        if max_loc == ROIs.ROI.back_button_location2:
-            return True
+        for button_location in ROIs.ROI.button_locations:
+            if max_loc == button_location:
+                return True
         
         # Back button check when in abilities menu
         max_loc = self._matchImage(frame, templatepath = ClipEnhancer.BACKBUTTON_TEMPLATE_LOCATION, ROI=ROIs.AbilitiesROI)
            
+        if DEBUG:
+            color = (255, 0, 255)
+            self._print_rect_on_frame(frame, max_loc, ROIs.AbilitiesROI, color)
+            self._print_text_on_frame(frame, f'Bck_btn x, y: {round(max_loc[0], 5):7} -{round(max_loc[1], 5):7}', (10, 150), color)
+           
         if max_loc == ROIs.AbilitiesROI.back_button_location:
             return True
         
-        # TODO
         # Sort button check in weapon switching menu
         max_loc = self._matchImage(frame, templatepath=ClipEnhancer.SORTBUTTON_TEMPLATE_LOCATION, ROI=ROIs.SortbuttonROI)
-        self._print_rect_on_frame(frame, max_loc, ROIs.SortbuttonROI)
         
         if DEBUG:
-            self._print_text_on_frame(frame, f'Srt_btn x: {round(max_loc[0], 5):7}', (10, 60))
-            self._print_text_on_frame(frame, f'Srt_btn y: {round(max_loc[1], 5):7}', (10, 90))
+            color = (255, 255, 0)
+            self._print_rect_on_frame(frame, max_loc, ROIs.SortbuttonROI, color)
+            self._print_text_on_frame(frame, f'Srt_btn x, y: {round(max_loc[0], 5):7} -{round(max_loc[1], 5):7}', (10, 200), color)
         
         if max_loc == ROIs.SortbuttonROI.sort_button_location:
             return True
         
+        if max_loc == ROIs.SortbuttonROI.sort_button_location2:
+            return True
+        
         # Hold button check when inventory is opened
         max_loc = self._matchImage(frame, templatepath=ClipEnhancer.HOLDBUTTON_TEMPLATE_LOCATION, ROI=ROIs.InventoryROI)
-        self._print_rect_on_frame(frame, max_loc, ROIs.InventoryROI)
         
         if DEBUG:
-            self._print_text_on_frame(frame, f'Hld_btn x: {round(max_loc[0], 5):7}', (10, 140))
-            self._print_text_on_frame(frame, f'Hld_btn y: {round(max_loc[1], 5):7}', (10, 170))
+            (255, 0, 0)
+            self._print_rect_on_frame(frame, max_loc, ROIs.InventoryROI, color)
+            self._print_text_on_frame(frame, f'Hld_btn x, y: {round(max_loc[0], 5):7} -{round(max_loc[1], 5):7}', (10, 250), color)
         
         if max_loc == ROIs.InventoryROI.hold_button_location:
             return True
@@ -199,10 +210,17 @@ class ClipEnhancer:
         return False
     
     def _frameBlurry(self, frame: ndarray) -> bool:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Crop frame into (slightly less than) the upper half 
+        # of the image to ensure no UI element is getting in 
+        # the way of the potential blur in the background
+        w, h = frame.shape[0], round(frame.shape[1] / 2 - 15)
+        x, y = 0, 0
+        cropped_frame = frame[y:y+h, x:x+w]
+        
+        gray = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2GRAY)
         fm = cv2.Laplacian(gray, cv2.CV_64F).var()
         if DEBUG: cv2.putText(frame, f'Blur: {round(fm, 5):7}', (10, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (255,180,0), 2)
-        if fm < 10.5: return True
+        if fm < BLUR_THRESHOLD: return True
         return False
     
     def extractFrames(self):
@@ -217,6 +235,7 @@ class ClipEnhancer:
         # Necessary for figuring out audio track cuts/trims
         lastFrameWasInMenu = False
         
+        print()
         print('[*] Extracting frames...')
         print()
         with alive_bar(totalFrames) as bar:
@@ -257,7 +276,10 @@ class ClipEnhancer:
             self._removedFrames += 1
             if bar: bar()
         
-        # The code below is all for figuring out when to cut the audio track
+        # --------------------------------------------------
+        # ----- The code below is for figuring out     -----
+        # ----- when to cut the audio track            -----
+        # --------------------------------------------------
         
         # If frame does contain menu AND starts a sequence of "menuframes"
         if frameIsInMenu and not lastFrameWasInMenu:            
@@ -348,7 +370,7 @@ if __name__=="__main__":
     if not os.path.exists(ClipEnhancer.FRAME_FILE_LOCATION): os.mkdir(ClipEnhancer.FRAME_FILE_LOCATION)
     if not os.path.exists(ClipEnhancer.VIDEO_FILE_LOCATION): os.mkdir(ClipEnhancer.VIDEO_FILE_LOCATION)
     
-    file = '/Users/lkolding/Movies/OBS/TotK 15-07-23 18-17.mkv'
+    file = '/Users/lkolding/Movies/OBS/TotK 01-07-23 01-38.mkv'
     ce = ClipEnhancer(60, (1920, 1080), file)
     ce.run()
     
