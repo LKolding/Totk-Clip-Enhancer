@@ -12,7 +12,7 @@ from VideoConverter import convert_to_mp4
 import ROIs
 
 DEBUG = False
-BLUR_THRESHOLD = 20
+BLUR_THRESHOLD = 30
 
 class ClipEnhancer:
     VIDEO_FILE_LOCATION = 'Videos/'
@@ -370,7 +370,7 @@ if __name__=="__main__":
     if not os.path.exists(ClipEnhancer.FRAME_FILE_LOCATION): os.mkdir(ClipEnhancer.FRAME_FILE_LOCATION)
     if not os.path.exists(ClipEnhancer.VIDEO_FILE_LOCATION): os.mkdir(ClipEnhancer.VIDEO_FILE_LOCATION)
     
-    file = '/Users/lkolding/Movies/OBS/TotK 01-07-23 01-38.mkv'
+    file = '/Users/lkolding/Movies/OBS/silver lynel fail.mkv'
     ce = ClipEnhancer(60, (1920, 1080), file)
     ce.run()
     
