@@ -4,3 +4,7 @@ Enhance your clips by having all menus cut out. Abilities, weapon switching, shi
 
 Please be advised of the following:
 Moviepy library might (will) break and raise IndexError if you don't fix the buffersize error when using the .cutout method from AudioFileClip.
+
+# Setup:
+
+pip3 install -r requirements.txt
