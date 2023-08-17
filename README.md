@@ -12,10 +12,8 @@ Moviepy library might (will) break if clip is too long and raise IndexError if y
 You must also have ffmpeg installed and accessable from the command line
 
 # Usage:
-Firstly:
-Change paths in TCE.py ClipEnhancer class
 
-Then use in script or directly in the python interpreter (presumably in a virtual environment)
+Use in script or directly in the python interpreter (presumably in a virtual environment)
 ```
 from TCE import ClipEnhancer
 ce = ClipEnhancer(framerate: float, framesize: tuple, filepath: str)
