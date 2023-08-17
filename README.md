@@ -13,4 +13,5 @@ pip3 install -r requirements.txt
 Change paths in TCE.py ClipEnhancer class
 
 from TCE import ClipEnhancer
-ce = ClipEnhancer()
+ce = ClipEnhancer(framerate: float, framesize: tuple, filepath: str)
+ce.run()
