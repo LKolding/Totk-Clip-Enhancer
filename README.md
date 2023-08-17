@@ -8,7 +8,8 @@ Moviepy library might (will) break if clip is too long and raise IndexError if y
 # Setup:
 
 ```pip3 install -r requirements.txt```
-you must also have ffmpeg installed and accessable from the command line
+
+You must also have ffmpeg installed and accessable from the command line
 
 # Usage:
 Change paths in TCE.py ClipEnhancer class
