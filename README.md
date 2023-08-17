@@ -8,3 +8,6 @@ Moviepy library might (will) break and raise IndexError if you don't fix the buf
 # Setup:
 
 pip3 install -r requirements.txt
+
+# Usage:
+Change paths in TCE.py ClipEnhancer class
